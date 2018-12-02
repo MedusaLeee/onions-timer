@@ -1,13 +1,19 @@
 const AMQP = require('amqplib')
+const moment = require('moment')
+const startAt = moment().unix() * 1000 + 3 * 60 * 1000
 const startProducer = async (conn, messageCount) => {
     const channel = await conn.createConfirmChannel()
     const producerQueue = 'timerProducerQ'
+    // 测试在同一时间时间点 触发多个任务的延迟, 当前时间 + 2 分钟
     // 定义队列
     await channel.assertQueue(producerQueue, { durable: true })
     for (let i = 0; i < messageCount; i += 1) {
         const message = {
-            time: Date.now(),
-            ok: true
+            startAt,
+            data: {
+                startAt: startAt,
+                data: "你好"
+            }
         }
         await channel.sendToQueue(producerQueue, Buffer.from(JSON.stringify(message)), {
             mandatory: true,
@@ -33,7 +39,8 @@ const startConsumer = async (conn, prefetch) => {
     await channel.consume(consumerQueue, async (msg) => {
         try {
             const message = JSON.parse(msg.content.toString())
-            console.log('consumer message: ', message)
+            const timeDiff = moment().unix() * 1000 - startAt
+            console.log('consumer timeDiff: ', timeDiff, ',message: ', message)
         } catch (e) {
             console.error('consumer err: ' + e.toString())
         } finally {
@@ -50,4 +57,4 @@ const main = async (messageCount, prefetch) => {
     startProducer(conn, messageCount).then()
 }
 
-main(1, 1).then()
+main(1000, 50).then()

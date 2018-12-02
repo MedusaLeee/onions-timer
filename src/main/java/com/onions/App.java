@@ -2,17 +2,19 @@ package com.onions;
 
 import com.onions.mq.TimerTaskConsumer;
 import com.onions.mq.TimerTaskProducer;
+import com.onions.quartz.OnionQuartz;
+import org.quartz.SchedulerException;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class App {
-    public static void main( String[] args ) throws IOException, TimeoutException {
+    public static void main( String[] args ) throws IOException, TimeoutException, SchedulerException {
+        // 启动quartz
+        OnionQuartz.start();
         String consumerQueueName = "timerProducerQ";
-        String producerQueueName = "timerConsumerQ";
         int basicQos = 50;
-        TimerTaskProducer taskProducer = new TimerTaskProducer(producerQueueName);
-        TimerTaskConsumer timerTaskConsumer = new TimerTaskConsumer(consumerQueueName, basicQos, taskProducer);
+        TimerTaskConsumer timerTaskConsumer = new TimerTaskConsumer(consumerQueueName, basicQos);
         timerTaskConsumer.start();
     }
 }

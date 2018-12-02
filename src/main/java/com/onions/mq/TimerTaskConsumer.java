@@ -1,24 +1,26 @@
 package com.onions.mq;
 
 
+import com.alibaba.fastjson.JSONObject;
+import com.onions.quartz.OnionQuartz;
+import com.onions.utils.Utils;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
 public class TimerTaskConsumer {
-    private String queueName = null;
+    private String queueName;
     private int basicQos = 50;
-    private TimerTaskProducer taskProducer = null;
     private final String consumerName = "TimerTaskConsumer";
 
-    public TimerTaskConsumer(String queueName, int basicQos, TimerTaskProducer taskProducer) {
+    public TimerTaskConsumer(String queueName, int basicQos) {
         this.queueName = queueName;
         this.basicQos = basicQos;
-        this.taskProducer = taskProducer;
     }
     public void start () throws IOException, TimeoutException {
         // 监听一个发过来的定时消息，设置quartz定时任务
@@ -30,9 +32,16 @@ public class TimerTaskConsumer {
             @Override
             //Broker 向消费者推送消息,处理RabbitMQ推送过来的消息
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                String message = new String(body);
-                System.out.println("TimerTaskConsumer consumerTag: " + consumerTag + ", deliveryTag: " + envelope.getDeliveryTag() + ", body:" + message );
-                taskProducer.sendMessage(message);
+                String messageBody = new String(body);
+                System.out.println("TimerTaskConsumer consumerTag: " + consumerTag + ", deliveryTag: " + envelope.getDeliveryTag() + ", body:" + messageBody );
+                JSONObject messageObject = Utils.jsonStringToJSONObject(messageBody);
+                long startAt = messageObject.getLongValue("startAt");
+                System.out.println("basicConsume startAt: " + startAt);
+                try {
+                    OnionQuartz.scheduleJob(startAt, messageBody);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 // 消费后向Broker发送确认消息
                 channel.basicAck(envelope.getDeliveryTag(), false);
                 // channel.basicReject(envelope.getDeliveryTag(), false); // 第二个参数设置成true会被重新入队

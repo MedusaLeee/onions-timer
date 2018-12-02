@@ -7,11 +7,11 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class TimerTaskProducer {
-    private String queueName = null;
-    private Channel channel = null;
+    private String queueName = "timerConsumerQ";
+    private Channel channel;
+    private static TimerTaskProducer producer;
 
-    public TimerTaskProducer(String queueName) throws IOException, TimeoutException {
-        this.queueName = queueName;
+    private TimerTaskProducer() throws IOException, TimeoutException {
         this.channel = ConnectionPool.getConnection().createChannel(); //创建信道
         channel.queueDeclare(this.queueName, true, false, false, null);
         this.channel.confirmSelect();
@@ -28,10 +28,18 @@ public class TimerTaskProducer {
             }
         });
     }
+
     public void sendMessage (String message) throws IOException {
         // 监听一个发过来的定时消息，设置quartz定时任务
         long nextSeqNo = this.channel.getNextPublishSeqNo();
         channel.basicPublish("", this.queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
         System.out.println("TimerTaskProducer nextSeqNo: " + nextSeqNo );
+    }
+    public static TimerTaskProducer getInstance() throws IOException, TimeoutException {
+        if (producer == null) {
+            producer = new TimerTaskProducer();
+            return producer;
+        }
+        return producer;
     }
 }
