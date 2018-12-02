@@ -1,7 +1,6 @@
 package com.onions;
 
 import com.onions.mq.TimerTaskConsumer;
-import com.onions.mq.TimerTaskProducer;
 import com.onions.quartz.OnionQuartz;
 import org.quartz.SchedulerException;
 

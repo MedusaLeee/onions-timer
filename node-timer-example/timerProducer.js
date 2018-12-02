@@ -1,3 +1,6 @@
+/**
+ * 同一时间点并发1000 延迟测试 15秒，和 quartz线程数有关
+ */
 const AMQP = require('amqplib')
 const moment = require('moment')
 const startAt = moment().unix() * 1000 + 3 * 60 * 1000
