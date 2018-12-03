@@ -28,7 +28,9 @@ public class OnionQuartz {
                 .usingJobData("message", message)
                 .build();
         System.out.printf("job time: " + Utils.formatDate(new Date(startAt)));
-        Trigger trigger = TriggerBuilder.newTrigger().withIdentity("trigger:"+ uuid, "onion")
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity("trigger:"+ uuid, "onion")
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow()) // 失效立即执行
                 .startAt(new Date(startAt)).build();
         scheduler.scheduleJob(jobDetail, trigger);
     }
